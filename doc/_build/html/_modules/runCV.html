@@ -1,0 +1,172 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>runCV &mdash; GraphNet v0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="/usr/share/jsmath"></script>
+    <link rel="top" title="GraphNet v0.1 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GraphNet v0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for runCV</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">glob</span><span class="o">,</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">brain.cv</span> <span class="kn">import</span> <span class="n">CV</span>
+<span class="kn">from</span> <span class="nn">brain.data</span> <span class="kn">import</span> <span class="n">load_processed</span>
+<span class="kn">from</span> <span class="nn">cwpath</span> <span class="kn">import</span> <span class="n">lasso</span>
+
+<span class="kn">from</span> <span class="nn">brain.paths</span> <span class="kn">import</span> <span class="n">cvresults</span>
+
+<div class="viewcode-block" id="runCV"><a class="viewcode-back" href="../sections/Functions.html#runCV.runCV">[docs]</a><span class="k">def</span> <span class="nf">runCV</span><span class="p">(</span><span class="n">dataset</span> <span class="o">=</span> <span class="s">&#39;first_full&#39;</span><span class="p">,</span>
+          <span class="n">path</span> <span class="o">=</span> <span class="n">cvresults</span><span class="p">,</span> <span class="c">#+ &quot;_adaptive&quot;,</span>
+          <span class="n">olddir</span> <span class="o">=</span> <span class="bp">None</span><span class="p">,</span>
+          <span class="n">problem</span> <span class="o">=</span> <span class="n">lasso</span><span class="o">.</span><span class="n">RobustGraphnetReweight</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Automates running cross-validation over a grid</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    
+    <span class="n">l1</span> <span class="o">=</span> <span class="p">[</span><span class="mf">40.</span><span class="p">]</span><span class="c">#[0.,10.,15.,20.,30.,35.,40.]</span>
+    <span class="n">l2</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.</span><span class="p">]</span><span class="c">#[0.,1.,10,100,1e5]</span>
+    <span class="n">l3</span> <span class="o">=</span> <span class="p">[</span><span class="mf">100.</span><span class="p">]</span><span class="c">#[0.,1e2,1e4,1e6,1e8][::-1]</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.75</span><span class="p">]</span><span class="c">#[0.25,0.5,0.75] #[0.1] + list(np.linspace(0.2,0.4,11)) + [0.5,1,20]</span>
+    <span class="n">newl1</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="mf">1e1</span><span class="p">,</span><span class="mf">1e-1</span><span class="p">,</span><span class="mf">1e2</span><span class="p">,</span><span class="mf">1e-2</span><span class="p">,</span><span class="mf">1e3</span><span class="p">,</span><span class="mf">1e-3</span><span class="p">,</span><span class="mf">1e4</span><span class="p">,</span><span class="mf">1e-4</span><span class="p">,</span><span class="mf">1e-5</span><span class="p">,</span><span class="mf">1e5</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">problem</span> <span class="o">==</span> <span class="n">lasso</span><span class="o">.</span><span class="n">RobustGraphnetReweight</span><span class="p">:</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="n">generateGrid</span><span class="p">(</span><span class="n">l1</span><span class="p">,</span><span class="n">l2</span><span class="p">,</span><span class="n">l3</span><span class="p">,</span><span class="n">delta</span><span class="p">,</span><span class="n">newl1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">grid</span> <span class="o">=</span> <span class="n">generateGrid</span><span class="p">(</span><span class="n">l1</span><span class="p">,</span><span class="n">l2</span><span class="p">,</span><span class="n">l3</span><span class="p">,</span><span class="n">delta</span><span class="p">)</span>
+
+    <span class="n">grid</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">load_processed</span><span class="p">(</span><span class="s">&#39;first_full&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">:</span>
+        <span class="k">print</span> <span class="n">i</span>
+        <span class="n">evaluatePt</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span><span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span><span class="n">problem</span><span class="o">=</span><span class="n">problem</span><span class="p">,</span><span class="n">olddir</span><span class="o">=</span><span class="n">olddir</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</div>
+<span class="k">def</span> <span class="nf">evaluatePt</span><span class="p">(</span><span class="n">penalties</span><span class="p">,</span><span class="n">path</span><span class="o">=</span><span class="n">cvresults</span><span class="p">,</span><span class="n">dataset</span><span class="o">=</span><span class="s">&#39;first_full&#39;</span><span class="p">,</span><span class="n">problem</span><span class="o">=</span><span class="n">lasso</span><span class="o">.</span><span class="n">Laplace</span><span class="p">,</span>
+               <span class="n">olddir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+               <span class="n">data</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+   
+    <span class="k">if</span> <span class="n">problem</span><span class="o">==</span><span class="n">lasso</span><span class="o">.</span><span class="n">RobustGraphnetReweight</span><span class="p">:</span>
+        <span class="n">adaptive</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">problem</span><span class="o">=</span><span class="n">lasso</span><span class="o">.</span><span class="n">RobustGraphnetIC</span>
+        <span class="n">penalty_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;l1&#39;</span><span class="p">:</span><span class="n">penalties</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="s">&#39;l2&#39;</span><span class="p">:</span><span class="n">penalties</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="s">&#39;l3&#39;</span><span class="p">:</span><span class="n">penalties</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                        <span class="s">&#39;delta&#39;</span><span class="p">:</span><span class="n">penalties</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+                        <span class="s">&#39;newl1&#39;</span><span class="p">:</span><span class="n">penalties</span><span class="p">[</span><span class="mi">4</span><span class="p">]}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">penalty_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;l1&#39;</span><span class="p">:</span><span class="n">penalties</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="s">&#39;l2&#39;</span><span class="p">:</span><span class="n">penalties</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="s">&#39;l3&#39;</span><span class="p">:</span><span class="n">penalties</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                        <span class="s">&#39;delta&#39;</span><span class="p">:</span><span class="n">penalties</span><span class="p">[</span><span class="mi">3</span><span class="p">]}</span>
+        <span class="n">adaptive</span> <span class="o">=</span> <span class="bp">False</span>
+
+
+    <span class="n">CV</span><span class="o">.</span><span class="n">sample</span> <span class="o">=</span> <span class="s">&#39;leave_one_subj&#39;</span>
+    <span class="c">#CV.sample = &#39;balanced&#39;</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">CV</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span><span class="n">penalty</span><span class="o">=</span><span class="n">penalty_dict</span><span class="p">,</span><span class="n">problem</span><span class="o">=</span><span class="n">problem</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+           <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">load_data</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">v2</span> <span class="o">=</span> <span class="n">CV</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span><span class="n">penalty</span><span class="o">=</span><span class="n">penalty_dict</span><span class="p">,</span><span class="n">problem</span><span class="o">=</span><span class="n">problem</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+           <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">load_data</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">incomplete</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">incomplete</span>
+
+    <span class="k">if</span> <span class="n">adaptive</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">incomplete</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">adaptive_fit</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">print</span> <span class="n">i</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">incomplete</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">print</span> <span class="n">i</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+       
+<span class="k">def</span> <span class="nf">generateGrid</span><span class="p">(</span><span class="o">*</span><span class="n">vecs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_onelayer</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">aa</span> <span class="ow">in</span> <span class="n">a</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">aa</span><span class="p">,</span><span class="nb">tuple</span><span class="p">):</span>
+                <span class="n">aa</span> <span class="o">=</span> <span class="p">(</span><span class="n">aa</span><span class="p">,)</span>
+            <span class="k">for</span> <span class="n">bb</span> <span class="ow">in</span> <span class="n">b</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">aa</span><span class="o">+</span><span class="p">(</span><span class="n">bb</span><span class="p">,)</span>
+    <span class="k">return</span> <span class="nb">reduce</span><span class="p">(</span><span class="n">_onelayer</span><span class="p">,</span><span class="n">vecs</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">GraphNet v0.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2010, Logan Grosenick, Brad Klingenberg, Jonathan Taylor.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0b2.
+    </div>
+  </body>
+</html>

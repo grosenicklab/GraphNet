@@ -1,0 +1,6 @@
+export PYTHONPATH=$PYTHONPATH:$HOME/code/cwpath
+alias python="/home/stow/swtree/bin/python2.6"
+export PYTHONPATH=$HOME/local/lib/python2.6/site-packages
+export PATH=$PATH:$HOME/local/bin
+export ATLAS=/home/stow/swtree/stow/atlas-3.8.3/atlas-3.8.3/
+export EDITOR='emacs -nw'

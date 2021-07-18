@@ -1,0 +1,6 @@
+To compile the necessary cython modules to run Graphnet, first run
+
+python setup.py build_ext --inplace
+
+from the Graphnet/code directory.
+
