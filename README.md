@@ -1,6 +1,6 @@
 ## GRAPHNET for graph-regularized sparse regression and classification. 
 
-This Pythonic and Cythonic code implements the algorithms discussed in 
+This Pythonic and Cythonic code is an in-progress rehabilitation of code that implements the algorithms discussed in 
 
 https://www.sciencedirect.com/science/article/pii/S1053811912012487
 
